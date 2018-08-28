@@ -1,0 +1,40 @@
+{
+    "name": "fx-db",
+    "version": "0.0.1",
+    "description": "",
+    "main": "lib/index.js",
+    "types": "@types/index.d.ts",
+    "repository": "git://github.com/richardo2016/fx-db.git",
+    "author": "richardo2016@gmail.com",
+    "homepage": "https://github.com/richardo2016/fx-db",
+    "license": "MIT",
+    "keywords": [
+        "database",
+        "fibjs",
+        "mysql",
+        "sqlite",
+        "mongodb"
+    ],
+    "scripts": {
+        "build": "fib-typify src -o lib -c tsconfig.json",
+        "ci": "fibjs test"
+    },
+    "devDependencies": {
+        "@fibjs/ci": "^2.1.0",
+        "@types/fibjs": "^0.26.0",
+        "fib-typify": "^0.3.0",
+        "rxjs": "^6.2.2"
+    },
+    "ci": {
+        "type": "travis",
+        "version": [
+            "0.26.0",
+            "0.26.1"
+        ]
+    },
+    "dependencies": {
+        "@fibjs/enforce": "0.0.1",
+        "lodash.clonedeep": "^4.5.0",
+        "lokijs": "^1.5.5"
+    }
+}
