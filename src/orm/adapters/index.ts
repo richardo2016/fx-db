@@ -1,4 +1,4 @@
-const aliases = require('./Drivers/aliases');
+const aliases = require('../drivers/aliases');
 const adapters = {};
 
 export function add (name, constructor) {

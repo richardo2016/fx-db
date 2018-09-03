@@ -1,5 +1,9 @@
+/// <reference path="../../@types/index.d.ts" />
+
 import util = require('util')
 import uuid = require('uuid')
+import url = require('url')
+
 import events = require('events')
 
 import DriverAliases  = require("./drivers/aliases");
@@ -19,7 +23,11 @@ export const Settings = null
 export const ErrorCodes = null
 export const Text = null
 export const express = null
-export const use = function (connection, proto, opts, cb) {
+
+export function use (connection: string, proto: any, opts: {[key: string]: any}, cb?: Function): any;
+export function use (connection: string, proto: any, cb: Function): any;
+
+export function use (connection: string, proto: any, opts: {[key: string]: any}, cb?: Function) {
 	if (DriverAliases[proto]) {
 		proto = DriverAliases[proto];
 	}
@@ -42,8 +50,91 @@ export const use = function (connection, proto, opts, cb) {
 		return cb(ex);
 	}
 };
-export const connect = null
-export const addAdapter = null
+export const connect = function (opts, cb) {
+	if (arguments.length === 0 || !opts) {
+		return ORM_Error(new ORMError("CONNECTION_URL_EMPTY", 'PARAM_MISMATCH'), cb);
+	}
+	if (typeof opts == 'string') {
+		if (opts.trim().length === 0) {
+			return ORM_Error(new ORMError("CONNECTION_URL_EMPTY", 'PARAM_MISMATCH'), cb);
+		}
+		opts = url.parse(opts, true);
+	} else if (typeof opts == 'object') {
+		opts = _.cloneDeep(opts);
+	}
+
+	opts.query = opts.query || {};
+
+	for(var k in opts.query) {
+		opts.query[k] = queryParamCast(opts.query[k]);
+		opts[k] = opts.query[k];
+	}
+
+	if (!opts.database) {
+		// if (!opts.pathname) {
+		// 	return cb(new Error("CONNECTION_URL_NO_DATABASE"));
+		// }
+		opts.database = (opts.pathname ? opts.pathname.substr(1) : "");
+	}
+	if (!opts.protocol) {
+		return ORM_Error(new ORMError("CONNECTION_URL_NO_PROTOCOL", 'PARAM_MISMATCH'), cb);
+	}
+	// if (!opts.host) {
+	// 	opts.host = opts.hostname = "localhost";
+	// }
+	if (opts.auth) {
+		opts.user = opts.auth.split(":")[0];
+		opts.password = opts.auth.split(":")[1];
+	}
+	if (!opts.hasOwnProperty("user")) {
+		opts.user = "root";
+	}
+	if (!opts.hasOwnProperty("password")) {
+		opts.password = "";
+	}
+	if (opts.hasOwnProperty("hostname")) {
+		opts.host = opts.hostname;
+	}
+
+	var proto  = opts.protocol.replace(/:$/, '');
+	var db;
+	if (DriverAliases[proto]) {
+		proto = DriverAliases[proto];
+	}
+
+	try {
+		var Driver   = adapters.get(proto);
+		var settings = new Settings.Container(exports.settings.get('*'));
+		var driver   = new Driver(opts, null, {
+			debug    : 'debug' in opts.query ? opts.query.debug : settings.get("connection.debug"),
+			pool     : 'pool'  in opts.query ? opts.query.pool  : settings.get("connection.pool"),
+			settings : settings
+		});
+
+		db = new ORM(proto, driver, settings);
+
+		driver.connect(function (err) {
+			if (typeof cb === "function") {
+				if (err) {
+					return cb(err);
+				} else {
+					return cb(null, db);
+				}
+			}
+
+			db.emit("connect", err, !err ? db : null);
+		});
+	} catch (ex) {
+		if (ex.code === "MODULE_NOT_FOUND" || ex.message.indexOf('find module') > -1) {
+			return ORM_Error(new ORMError("Connection protocol not supported - have you installed the database driver for " + proto + "?", 'NO_SUPPORT'), cb);
+		}
+		return ORM_Error(ex, cb);
+	}
+
+	return db;
+};
+export const connectSync = util.sync(connect)
+export const addAdapter = adapters.add
 
 function ORM(driver_name, driver, settings) {
 	this.validators  = exports.validators;
@@ -275,3 +366,19 @@ ORM.prototype.serial = function () {
 		}
 	};
 };
+
+function ORM_Error(err, cb) {
+	var Emitter: ORM_ErrorEmitter = new events.EventEmitter();
+
+	Emitter.use = Emitter.define = Emitter.sync = Emitter.load = function () {};
+
+	if (typeof cb === "function") {
+		cb(err);
+	}
+
+	process.nextTick(function () {
+		Emitter.emit("connect", err);
+	});
+
+	return Emitter;
+}

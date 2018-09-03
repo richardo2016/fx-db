@@ -5,7 +5,7 @@
 /// <reference path="orm.d.ts" />
 
 declare module "events" {
-    const EventEmitter: typeof Class_EventEmitter
+    export const EventEmitter: typeof Class_EventEmitter
 }
 
 declare module "fib-db" {

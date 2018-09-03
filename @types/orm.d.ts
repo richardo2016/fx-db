@@ -1,3 +1,5 @@
+import events = require('events')
+
 interface ORMSettings { }
 
 interface ORMDefineModelOptions {
@@ -42,4 +44,8 @@ interface FxORM {
     commit (): any
     rollback (): any
     trans (func: Function): any
+}
+
+interface ORM_ErrorEmitter extends events.EventEmitter {
+
 }

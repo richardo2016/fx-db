@@ -1,3 +1,3 @@
-import ORM from './orm'
+import * as ORM from './orm'
 
 export = ORM
