@@ -50,7 +50,7 @@ export function use (connection: string, proto: any, opts: {[key: string]: any},
 		return cb(ex);
 	}
 };
-export const connect = function (opts, cb) {
+export function connect (opts, cb) {
 	if (arguments.length === 0 || !opts) {
 		return ORM_Error(new ORMError("CONNECTION_URL_EMPTY", 'PARAM_MISMATCH'), cb);
 	}
@@ -382,3 +382,17 @@ function ORM_Error(err, cb) {
 
 	return Emitter;
 }
+
+function queryParamCast (val: any) {
+	if (typeof val == 'string')  {
+	  switch (val) {
+		case '1':
+		case 'true':
+		  return true;
+		case '0':
+		case 'false':
+		  return false;
+	  }
+	}
+	return val;
+  }

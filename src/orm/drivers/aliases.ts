@@ -1,6 +1,6 @@
 export = {
-	postgresql : "postgres",
-	pg         : "postgres",
+	// postgresql : "postgres",
+	// pg         : "postgres",
 
 	mongo      : "mongodb"
 };
